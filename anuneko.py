@@ -15,7 +15,7 @@ SELECT_CHOICE_URL = "https://anuneko.com/api/v1/msg/select-choice"
 SELECT_MODEL_URL = "https://anuneko.com/api/v1/user/select_model"
 
 DEFAULT_TOKEN = (
-    "在网页上随便发一个请求然后把请求头中的x-token放在这"
+    "x-token 自己改"
 )
 
 # 每个 QQ 用户一个独立会话
@@ -140,24 +140,51 @@ async def stream_reply(session_uuid: str, text: str) -> str:
                 "POST", url, headers=headers, content=data
             ) as resp:
                 async for line in resp.aiter_lines():
-                    if not line or not line.startswith("data: "):
+                    if not line:
+                        continue
+                    
+                    # 处理错误响应
+                    if not line.startswith("data: "):
+                        try:
+                            error_json = json.loads(line)
+                            if error_json.get("code") == "chat_choice_shown":
+                                return "⚠️ 检测到对话分支未选择，请重试或新建会话。"
+                        except:
+                            pass
                         continue
 
+                    # 处理 data: {}
                     try:
-                        j = json.loads(line[6:])
+                        raw_json = line[6:]
+                        if not raw_json.strip():
+                            continue
+                            
+                        j = json.loads(raw_json)
 
+                        # 只要出现 msg_id 就更新，流最后一条通常是 assistmsg，也就是我们要的 ID
                         if "msg_id" in j:
                             current_msg_id = j["msg_id"]
 
-                        # 需要分支 → 自动选
-                        if j.get("finish_reason") == "length" and current_msg_id:
-                            await send_choice(current_msg_id)
-
-                        if "v" in j:
+                        # 如果有 'c' 字段，说明是多分支内容
+                        # 格式如: {"c":[{"v":"..."},{"v":"...","c":1}]}
+                        if "c" in j and isinstance(j["c"], list):
+                            for choice in j["c"]:
+                                # 默认选项 idx=0，可能显式 c=0 或隐式(无 c 字段)
+                                idx = choice.get("c", 0)
+                                if idx == 0:
+                                    if "v" in choice:
+                                        result += choice["v"]
+                        
+                        # 常规内容 (兼容旧格式或无分支情况)
+                        elif "v" in j and isinstance(j["v"], str):
                             result += j["v"]
 
                     except:
                         continue
+        
+        # 流结束后，如果有 msg_id，自动确认选择第一项，确保下次对话正常
+        if current_msg_id:
+            await send_choice(current_msg_id)
 
     except Exception:
         return "请求失败，请稍后再试。"
