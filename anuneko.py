@@ -15,7 +15,7 @@ SELECT_CHOICE_URL = "https://anuneko.com/api/v1/msg/select-choice"
 SELECT_MODEL_URL = "https://anuneko.com/api/v1/user/select_model"
 
 DEFAULT_TOKEN = (
-    "x-token 自己改"
+    "CAEaJGMwOWE3YjFjLTVmOWEtNGE0Zi1iOWI1LWQyNDAyZjQzNzlmYSDF7r7JBii13YShBzCdgsCg-rvT9Qs6BG5la28.RbcvaQAAAAAAAg.MEUCIQCx9bAl-l6HjYbAC8UfyZXeerPcu5j6-B85lfDM72S0CwIgIum0RAvL8_d-5BiDQp1lDM-6Xcgjs02vG1npCD70UeE"
 )
 
 # 每个 QQ 用户一个独立会话
@@ -23,7 +23,7 @@ user_sessions = {}
 # 每个 QQ 用户的当前模型
 user_models = {}  # user_id: "Orange Cat" or "Exotic Shorthair"
 
-WATERMARK = "\n\n—— 内容由 anuneko.com 提供，该服务只是一个第三方前端"
+WATERMARK = ""
 
 
 # ============================================================
